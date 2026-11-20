@@ -1,0 +1,311 @@
+{
+  "fields": 180,
+  "split_seed": 42,
+  "model": {
+    "count": 3374,
+    "top_1": 0.6066982809721398,
+    "top_3": 0.8687018375815057,
+    "top_5": 0.9549496147006521,
+    "perplexity": 3.0836555585427976,
+    "common_mistakes": [
+      {
+        "actual": "aphids_observed",
+        "predicted": "mild_season",
+        "count": 60
+      },
+      {
+        "actual": "soybean",
+        "predicted": "chickpea",
+        "count": 59
+      },
+      {
+        "actual": "drought_stress",
+        "predicted": "mild_season",
+        "count": 50
+      },
+      {
+        "actual": "scouting_visit",
+        "predicted": "irrigation",
+        "count": 49
+      },
+      {
+        "actual": "fallow",
+        "predicted": "maize",
+        "count": 46
+      },
+      {
+        "actual": "dry_season",
+        "predicted": "drought_stress",
+        "count": 43
+      }
+    ]
+  },
+  "baseline": {
+    "count": 3374,
+    "top_1": 0.3927089508002371,
+    "top_3": 0.7747480735032602,
+    "top_5": 0.944279786603438,
+    "perplexity": 4.27057776667913,
+    "common_mistakes": [
+      {
+        "actual": "scouting_visit",
+        "predicted": "no_intervention",
+        "count": 151
+      },
+      {
+        "actual": "mild_season",
+        "predicted": "aphids_observed",
+        "count": 116
+      },
+      {
+        "actual": "drought_stress",
+        "predicted": "aphids_observed",
+        "count": 101
+      },
+      {
+        "actual": "drought_stress",
+        "predicted": "mild_season",
+        "count": 96
+      },
+      {
+        "actual": "soybean",
+        "predicted": "maize",
+        "count": 95
+      },
+      {
+        "actual": "humid_season",
+        "predicted": "mild_season",
+        "count": 91
+      }
+    ]
+  },
+  "examples": [
+    {
+      "field": "field-0504",
+      "prefix": [
+        "cotton",
+        "drought_stress"
+      ],
+      "target": "dry_season",
+      "model": [
+        [
+          "dry_season",
+          0.9502101732743601
+        ],
+        [
+          "mild_season",
+          0.03467642378490908
+        ],
+        [
+          "humid_season",
+          0.014108367118140638
+        ]
+      ],
+      "baseline": [
+        [
+          "dry_season",
+          0.8533556245521854
+        ],
+        [
+          "mild_season",
+          0.07666587055170766
+        ],
+        [
+          "humid_season",
+          0.06615715309290661
+        ]
+      ]
+    },
+    {
+      "field": "field-0786",
+      "prefix": [
+        "chickpea",
+        "drought_stress"
+      ],
+      "target": "dry_season",
+      "model": [
+        [
+          "dry_season",
+          0.9519532352993179
+        ],
+        [
+          "mild_season",
+          0.03819028475886449
+        ],
+        [
+          "humid_season",
+          0.00915874768273116
+        ]
+      ],
+      "baseline": [
+        [
+          "dry_season",
+          0.8533556245521854
+        ],
+        [
+          "mild_season",
+          0.07666587055170766
+        ],
+        [
+          "humid_season",
+          0.06615715309290661
+        ]
+      ]
+    },
+    {
+      "field": "field-0232",
+      "prefix": [
+        "maize",
+        "aphids_observed",
+        "stem_borer"
+      ],
+      "target": "humid_season",
+      "model": [
+        [
+          "humid_season",
+          0.8774912787122672
+        ],
+        [
+          "drought_stress",
+          0.07262426780049885
+        ],
+        [
+          "mild_season",
+          0.02331611980286856
+        ]
+      ],
+      "baseline": [
+        [
+          "humid_season",
+          0.6924355777223608
+        ],
+        [
+          "drought_stress",
+          0.12385702410640066
+        ],
+        [
+          "mild_season",
+          0.10058187863674148
+        ]
+      ]
+    },
+    {
+      "field": "field-0504",
+      "prefix": [
+        "cotton",
+        "drought_stress",
+        "dry_season",
+        "irrigation"
+      ],
+      "target": "fallow",
+      "model": [
+        [
+          "maize",
+          0.6370658710827174
+        ],
+        [
+          "fallow",
+          0.16698799902005215
+        ],
+        [
+          "chickpea",
+          0.14748449241820974
+        ]
+      ],
+      "baseline": [
+        [
+          "fallow",
+          0.23365949119373777
+        ],
+        [
+          "soybean",
+          0.23209393346379648
+        ],
+        [
+          "maize",
+          0.19921722113502935
+        ]
+      ]
+    },
+    {
+      "field": "field-0786",
+      "prefix": [
+        "chickpea",
+        "drought_stress",
+        "dry_season",
+        "irrigation",
+        "wheat",
+        "drought_stress",
+        "dry_season",
+        "irrigation",
+        "chickpea",
+        "drought_stress"
+      ],
+      "target": "mild_season",
+      "model": [
+        [
+          "dry_season",
+          0.9823283437961753
+        ],
+        [
+          "mild_season",
+          0.012816949956709064
+        ],
+        [
+          "humid_season",
+          0.004233940045011473
+        ]
+      ],
+      "baseline": [
+        [
+          "dry_season",
+          0.8533556245521854
+        ],
+        [
+          "mild_season",
+          0.07666587055170766
+        ],
+        [
+          "humid_season",
+          0.06615715309290661
+        ]
+      ]
+    },
+    {
+      "field": "field-0232",
+      "prefix": [
+        "maize",
+        "aphids_observed"
+      ],
+      "target": "stem_borer",
+      "model": [
+        [
+          "drought_stress",
+          0.37484992014896223
+        ],
+        [
+          "stem_borer",
+          0.20489682666529258
+        ],
+        [
+          "humid_season",
+          0.15968463561407187
+        ]
+      ],
+      "baseline": [
+        [
+          "humid_season",
+          0.34935622317596565
+        ],
+        [
+          "leaf_rust",
+          0.21201716738197424
+        ],
+        [
+          "mild_season",
+          0.16165951359084407
+        ]
+      ]
+    }
+  ]
+}

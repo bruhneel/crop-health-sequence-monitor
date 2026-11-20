@@ -28,7 +28,19 @@ def main(argv: list[str] | None = None) -> None:
     train.add_argument("--learning-rate", type=float, default=0.00015)
     train.add_argument("--threads", type=int, default=4)
     train.add_argument("--seed", type=int, default=42)
+    evaluate = sub.add_parser("evaluate", help="score every prefix of held-out fields")
+    evaluate.add_argument("--data", type=Path, default=Path("data/sequences.jsonl"))
+    evaluate.add_argument("--model", type=Path, default=Path("artifacts/model"))
+    evaluate.add_argument("--results", type=Path, default=Path("results"))
     args = parser.parse_args(argv)
+    if args.command == "evaluate":
+        from app.evaluate import evaluate_run
+
+        try:
+            report = evaluate_run(args.data, args.model, args.results)
+        except (ValueError, OSError) as exc:
+            parser.error(str(exc))
+        print(f'LM top-1 {report["model"]["top_1"]:.2%}; bigram top-1 {report["baseline"]["top_1"]:.2%}.')
     if args.command == "train":
         from app.train import train_run
 

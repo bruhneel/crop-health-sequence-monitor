@@ -179,3 +179,34 @@ def continue_pretraining(
         if log:
             print(f"epoch {epoch:2d}  train {training:.4f}  val {validation:.4f}", flush=True)
     return history
+
+
+class ItemPredictor:
+    """Score the next item conditional on an event from the fixed vocabulary."""
+
+    def __init__(self, model: "PreTrainedModel", tokenizer: "PreTrainedTokenizerBase") -> None:
+        self.model = model.eval()
+        self.tokenizer = tokenizer
+        self.ids = event_ids(tokenizer)
+
+    def score_prefixes(self, sequences: "Sequence[Sequence[str]]") -> list[list[dict[str, float]]]:
+        """Score every position including the empty prefix in one causal forward pass."""
+        import torch
+
+        if not sequences:
+            return []
+        rows = [encode_sequence(row, self.tokenizer, self.ids, complete=False) for row in sequences]
+        if max(map(len, rows)) > self.model.config.max_position_embeddings:
+            raise ValueError("A sequence exceeds this model's context limit.")
+        tokens, mask = _packed(rows, self.tokenizer.pad_token_id)
+        candidates = torch.tensor(list(self.ids.values()))
+        with torch.inference_mode():
+            logits = self.model(input_ids=tokens, attention_mask=mask, use_cache=False).logits
+            distributions = logits.index_select(-1, candidates).double().softmax(dim=-1).tolist()
+        return [[dict(zip(self.ids, probabilities, strict=True)) for probabilities in row[:len(ids)]]
+                for row, ids in zip(distributions, rows, strict=True)]
+
+    def predict(self, observed: "Sequence[str]") -> dict[str, float]:
+        """Score the latest prefix, retaining the most recent events if truncated."""
+        window = self.model.config.max_position_embeddings - 1
+        return self.score_prefixes([observed[-window:] if window else ()])[0][-1]

@@ -72,10 +72,35 @@ def test_causal_training_and_local_checkpoint(tiny_pair, tmp_path):
     assert max(baseline.predict(["wheat"]), key=baseline.predict(["wheat"]).get) == "humid_season"
 
 
-# Milestone 4: Evaluate model's predictions on new, unseen agricultural sequences.
-@pytest.mark.skip(reason="remove this line when you start milestone 4")
-def test_milestone_4():
-    raise NotImplementedError("write the test for milestone 4")
+def test_rank_and_perplexity_by_hand():
+    import pytest
+
+    from app.core import Metrics
+
+    metrics = Metrics()
+    metrics.add("wheat", {"wheat": 0.5, "rice": 0.3, "maize": 0.2})
+    metrics.add("wheat", {"wheat": 0.25, "rice": 0.55, "maize": 0.2})
+    result = metrics.report()
+    assert (result["top_1"], result["top_3"], result["top_5"]) == (0.5, 1.0, 1.0)
+    assert result["perplexity"] == pytest.approx((1 / (0.5 * 0.25))**0.5)
+    assert result["common_mistakes"] == [{"actual": "wheat", "predicted": "rice", "count": 1}]
+
+
+def test_test_fields_are_excluded_and_prefix_scores_are_causal(tiny_pair):
+    import pytest
+
+    from app.core import ITEMS, generate_fields, split_fields
+    from app.llm import ItemPredictor
+
+    parts = split_fields(generate_fields(30))
+    assert not {row.field_id for row in parts["test"]} & {row.field_id for row in parts["train"]}
+    model, tokenizer = tiny_pair
+    predict = ItemPredictor(model, tokenizer)
+    shorter, longer = predict.score_prefixes([["wheat"], ["wheat", "humid_season", "leaf_rust"]])
+    assert len(shorter) == 2 and len(longer) == 4
+    assert set(shorter[-1]) == set(ITEMS) and sum(shorter[-1].values()) == pytest.approx(1)
+    assert shorter[-1] == pytest.approx(longer[1], abs=1e-7)
+    assert predict.predict(["wheat"]) == pytest.approx(shorter[-1], abs=1e-7)
 
 
 # Milestone 5: Implement a CLI to query likely next items based on current observations.

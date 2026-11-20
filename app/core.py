@@ -162,10 +162,42 @@ class Bigram:
         return {item: (row.get(item, 0) + self.alpha) / total for item in ITEMS}
 
 
-# --- Milestone 4: Evaluate model's predictions on new, unseen agricultural sequences.
-# Hint: Evaluate the model's predictions on a held-out set of agricultural sequences.
-def milestone_4():  # TODO(milestone 4)
-    raise NotImplementedError("TODO(milestone 4)")
+def top_items(probabilities: dict[str, float], k: int) -> list[tuple[str, float]]:
+    """Rank candidates with a stable lexical tie break."""
+    if k < 1:
+        raise ValueError("Top count must be positive.")
+    return sorted(probabilities.items(), key=lambda pair: (-pair[1], pair[0]))[:k]
+
+
+class Metrics:
+    """Accumulate top-k hits and mean negative log probability per event."""
+
+    def __init__(self) -> None:
+        self.count = 0
+        self.hits = {k: 0 for k in (1, 3, 5)}
+        self.total_nll = 0.0
+        self.mismatches: Counter[tuple[str, str]] = Counter()
+
+    def add(self, target: str, probabilities: dict[str, float]) -> None:
+        if target not in probabilities:
+            raise ValueError(f"Missing probability for target {target}.")
+        ranked = [item for item, _ in top_items(probabilities, 5)]
+        self.count += 1
+        for k in self.hits:
+            self.hits[k] += target in ranked[:k]
+        self.total_nll -= math.log(max(probabilities[target], 1e-300))
+        if target != ranked[0]:
+            self.mismatches[(target, ranked[0])] += 1
+
+    def report(self) -> dict:
+        if self.count == 0:
+            raise ValueError("Evaluation needs at least one target.")
+        return {"count": self.count, **{f"top_{k}": hits / self.count for k, hits in self.hits.items()},
+                "perplexity": math.exp(self.total_nll / self.count),
+                "common_mistakes": [
+                    {"actual": actual, "predicted": predicted, "count": count}
+                    for (actual, predicted), count in self.mismatches.most_common(6)
+                ]}
 
 
 # --- Milestone 5: Implement a CLI to query likely next items based on current observations.
