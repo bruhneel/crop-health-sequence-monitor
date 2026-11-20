@@ -4,6 +4,8 @@
 
 This project, 'Crop Health Sequence Monitor', provides farmers with a powerful tool for agriculture. By analyzing sequences of crop health data, it identifies common patterns and suggests next actions, aiding in predicting co-occurring pests or optimizing crop rotations.
 
+**Synthetic sample data.** All field histories and actions are fictional recorded events. This is not agronomic advice.
+
 ## What you are building
 
 **Goal.** You will build a tool that analyzes agricultural sequences to identify common patterns and predict likely next events, helping farmers make informed decisions.
