@@ -1,7 +1,9 @@
 """Synthetic field histories, pattern mining, and next-item evaluation."""
+from collections import Counter, defaultdict
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from difflib import get_close_matches
+import math
 import random
 
 
@@ -131,16 +133,33 @@ def split_fields(fields: Sequence[FieldHistory], seed: int = 42) -> dict[str, li
     return {"train": rows[2 * held_out:], "validation": rows[:held_out], "test": rows[held_out:2 * held_out]}
 
 
-# --- Milestone 2: Mine frequent co-occurring patterns using `thilimarketbasket`.
-# Hint: Use `thilimarketbasket` to find frequent co-occurring patterns.
-def milestone_2():  # TODO(milestone 2)
-    raise NotImplementedError("TODO(milestone 2)")
+START = "<start>"
 
 
-# --- Milestone 3: Train a small LM on these sequences for next-item prediction.
-# Hint: Train a small LM on the generated sequences for next-item prediction.
-def milestone_3():  # TODO(milestone 3)
-    raise NotImplementedError("TODO(milestone 3)")
+@dataclass(frozen=True)
+class Bigram:
+    """Additively smoothed next-item counts, including a start-of-field context."""
+
+    counts: dict[str, dict[str, int]]
+    alpha: float = 0.25
+
+    @classmethod
+    def fit(cls, fields: Iterable[FieldHistory], alpha: float = 0.25) -> "Bigram":
+        if not math.isfinite(alpha) or alpha <= 0:
+            raise ValueError("Bigram smoothing must be positive.")
+        counts: dict[str, Counter[str]] = defaultdict(Counter)
+        for field in fields:
+            context = START
+            for item in field.sequence():
+                counts[context][item] += 1
+                context = item
+        return cls({key: dict(value) for key, value in counts.items()}, alpha)
+
+    def predict(self, prefix: Sequence[str]) -> dict[str, float]:
+        """Normalize across precisely the same item vocabulary as the LM."""
+        row = self.counts.get(prefix[-1] if prefix else START, {})
+        total = sum(row.values()) + self.alpha * len(ITEMS)
+        return {item: (row.get(item, 0) + self.alpha) / total for item in ITEMS}
 
 
 # --- Milestone 4: Evaluate model's predictions on new, unseen agricultural sequences.

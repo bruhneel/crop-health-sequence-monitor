@@ -1,0 +1,41 @@
+{
+  "seed": 42,
+  "base": "distilbert/distilgpt2",
+  "dataset_sha256": "69a71bcbd647c0c94b7816783007f0adf4415a5deb5a7dbfc659cbeb40ad5f8e",
+  "splits": {
+    "train": 840,
+    "validation": 180,
+    "test": 180
+  },
+  "epochs": 4,
+  "batch_size": 16,
+  "learning_rate": 0.00015,
+  "history": [
+    {
+      "epoch": 0,
+      "train_loss": 8.13159735922152,
+      "val_loss": 8.189444438144275
+    },
+    {
+      "epoch": 1,
+      "train_loss": 2.378544529205138,
+      "val_loss": 1.28149276915555
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.2771510553634737,
+      "val_loss": 1.1344964025021924
+    },
+    {
+      "epoch": 3,
+      "train_loss": 1.1715738110507667,
+      "val_loss": 1.1119536232246683
+    },
+    {
+      "epoch": 4,
+      "train_loss": 1.117010232058688,
+      "val_loss": 1.124721155836475
+    }
+  ],
+  "parameter_count": 81927168
+}

@@ -18,7 +18,25 @@ def main(argv: list[str] | None = None) -> None:
     mine.add_argument("--max-size", type=int, default=4)
     mine.add_argument("--seed", type=int, default=42)
     mine.add_argument("--results", type=Path, default=Path("results"))
+    train = sub.add_parser("train", help="continue pretraining the local CPU language model")
+    train.add_argument("--data", type=Path, default=Path("data/sequences.jsonl"))
+    train.add_argument("--output", type=Path, default=Path("artifacts/model"))
+    train.add_argument("--results", type=Path, default=Path("results"))
+    train.add_argument("--base", default="distilbert/distilgpt2")
+    train.add_argument("--epochs", type=int, default=4)
+    train.add_argument("--batch-size", type=int, default=16)
+    train.add_argument("--learning-rate", type=float, default=0.00015)
+    train.add_argument("--threads", type=int, default=4)
+    train.add_argument("--seed", type=int, default=42)
     args = parser.parse_args(argv)
+    if args.command == "train":
+        from app.train import train_run
+
+        try:
+            train_run(args.data, args.output, args.results, args.base, args.seed, args.epochs,
+                      args.batch_size, args.learning_rate, args.threads)
+        except (ValueError, OSError) as exc:
+            parser.error(str(exc))
     if args.command == "mine":
         from app.core import split_fields
         from app.mining import mine_training, render_patterns

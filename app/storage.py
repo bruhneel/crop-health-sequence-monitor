@@ -2,6 +2,11 @@
 import json
 import os
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.core import FieldHistory
+    from transformers import PreTrainedModel, PreTrainedTokenizerBase
 
 
 class Store:
@@ -70,3 +75,31 @@ def write_report(directory: Path, name: str, report: dict, markdown: str) -> Non
     """Write both output formats under the same stem."""
     write_json(directory / f"{name}.json", report)
     (directory / f"{name}.md").write_text(markdown, encoding="utf-8")
+
+
+def dataset_digest(path: Path) -> str:
+    """Fingerprint the input dataset used to train the checkpoint."""
+    from hashlib import sha256
+
+    return sha256(path.read_bytes()).hexdigest()
+
+
+def save_model(
+    path: Path, model: "PreTrainedModel", tokenizer: "PreTrainedTokenizerBase", metadata: dict
+) -> None:
+    """Save a local safetensors checkpoint, tokenizer, and dataset metadata."""
+    path.mkdir(parents=True, exist_ok=True)
+    model.save_pretrained(path, safe_serialization=True)
+    tokenizer.save_pretrained(path)
+    write_json(path / "monitor.json", metadata)
+
+
+def load_model(path: Path) -> tuple["PreTrainedModel", "PreTrainedTokenizerBase", dict]:
+    """Load the saved model locally with a clear missing-checkpoint message."""
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    if not (path / "monitor.json").is_file():
+        raise FileNotFoundError("No trained model found. Run python -m app.cli train first.")
+    model = AutoModelForCausalLM.from_pretrained(path, local_files_only=True, use_safetensors=True)
+    tokenizer = AutoTokenizer.from_pretrained(path, local_files_only=True)
+    return model.eval(), tokenizer, json.loads((path / "monitor.json").read_text(encoding="utf-8"))

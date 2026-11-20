@@ -42,10 +42,34 @@ def test_exact_support_counts_and_association_thresholds():
     assert mine_baskets(baskets, 0.51)["rules"] == []
 
 
-# Milestone 3: Train a small LM on these sequences for next-item prediction.
-@pytest.mark.skip(reason="remove this line when you start milestone 3")
-def test_milestone_3():
-    raise NotImplementedError("write the test for milestone 3")
+def test_causal_training_and_local_checkpoint(tiny_pair, tmp_path):
+    import math
+
+    import torch
+
+    from app.core import Bigram, FieldHistory
+    from app.llm import continue_pretraining, encode_sequence, event_ids, event_token
+    from app.storage import load_model, save_model
+
+    model, tokenizer = tiny_pair
+    mapping = event_ids(tokenizer)
+    assert tokenizer.encode(event_token("wheat"), add_special_tokens=False) == [mapping["wheat"]]
+    field = FieldHistory("demo", (("wheat", "humid_season", "scouting_visit"),))
+    ids = encode_sequence(field.sequence(), tokenizer, mapping)
+    history = continue_pretraining(
+        model, [ids] * 8, [ids], pad=tokenizer.pad_token_id, epochs=8, batch_size=2,
+        learning_rate=0.02, seed=42, log=False,
+    )
+    assert all(math.isfinite(row["train_loss"]) for row in history)
+    assert history[-1]["val_loss"] < 0.6 * history[0]["val_loss"]
+    save_model(tmp_path, model, tokenizer, {"seed": 42})
+    restored, local_tokenizer, record = load_model(tmp_path)
+    assert event_ids(local_tokenizer) == mapping and record == {"seed": 42}
+    inputs = torch.tensor([ids])
+    torch.testing.assert_close(restored(inputs).logits, model(inputs).logits, atol=0, rtol=0)
+    baseline = Bigram.fit([field])
+    assert max(baseline.predict(()), key=baseline.predict(()).get) == "wheat"
+    assert max(baseline.predict(["wheat"]), key=baseline.predict(["wheat"]).get) == "humid_season"
 
 
 # Milestone 4: Evaluate model's predictions on new, unseen agricultural sequences.
