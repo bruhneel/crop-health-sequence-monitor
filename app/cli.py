@@ -4,7 +4,7 @@ from pathlib import Path
 
 
 def main(argv: list[str] | None = None) -> None:
-    parser = argparse.ArgumentParser(prog="crop-health-sequence-monitor", description="Farmers track crop health to predict co-occurring pests or optimal crop sequences. The tool identifies common patterns and suggests next actions.")
+    parser = argparse.ArgumentParser(prog="crop-health-sequence-monitor", description="Mine co-occurrences and rank next events in synthetic field histories.")
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("hello", help="check that everything is wired up")
     generate = sub.add_parser("generate-data", help="write a synthetic field history dataset")
@@ -32,7 +32,20 @@ def main(argv: list[str] | None = None) -> None:
     evaluate.add_argument("--data", type=Path, default=Path("data/sequences.jsonl"))
     evaluate.add_argument("--model", type=Path, default=Path("artifacts/model"))
     evaluate.add_argument("--results", type=Path, default=Path("results"))
+    for name, help_text in (("suggest", "score a comma-separated event prefix"),
+                            ("interactive", "score several prefixes in a prompt loop")):
+        query = sub.add_parser(name, help=help_text)
+        query.add_argument("--model", type=Path, default=Path("artifacts/model"))
+        query.add_argument("--patterns", type=Path, default=Path("results/patterns.json"))
+        query.add_argument("--top", type=int, default=5)
+        if name == "suggest":
+            query.add_argument("--observed", required=True)
     args = parser.parse_args(argv)
+    if args.command in {"suggest", "interactive"}:
+        try:
+            run_query(args)
+        except (ValueError, OSError, RuntimeError) as exc:
+            parser.error(str(exc))
     if args.command == "evaluate":
         from app.evaluate import evaluate_run
 
@@ -72,6 +85,74 @@ def main(argv: list[str] | None = None) -> None:
         print(f"Wrote {args.count} synthetic field histories to {args.output}.")
     if args.command == "hello":
         print("Crop Health Sequence Monitor is ready. Open README.md for your milestones.")
+
+
+def parse_observed(value: str) -> list[str]:
+    """Parse chronological comma-separated identifiers and validate the vocabulary."""
+    from app.core import validate_items
+
+    items = [item.strip().lower() for item in value.split(",") if item.strip()]
+    validate_items(items)
+    return items
+
+
+def run_query(args: argparse.Namespace) -> None:
+    """Load models once and show rankings, associations, and log-review actions."""
+    import json
+
+    import torch
+
+    from app.core import ITEMS, top_items
+    from app.llm import ItemPredictor
+    from app.storage import load_model
+
+    if not 1 <= args.top <= len(ITEMS):
+        raise ValueError(f"--top must be between 1 and {len(ITEMS)}.")
+    pending = parse_observed(args.observed) if args.command == "suggest" else None
+    torch.set_num_threads(4)
+    model, tokenizer, _ = load_model(args.model)
+    predictor = ItemPredictor(model, tokenizer)
+    if not args.patterns.is_file():
+        raise FileNotFoundError("No mined patterns found. Run python -m app.cli mine first.")
+    report = json.loads(args.patterns.read_text(encoding="utf-8"))
+
+    def show(observed: list[str]) -> None:
+        ranked = top_items(predictor.predict(observed), args.top)
+        present = set(observed)
+        matched = [
+            row for row in report["rules"]
+            if set(row["antecedent"]) <= present and not set(row["consequent"]) <= present
+        ]
+        print("Likely next items (synthetic model)")
+        for item, probability in ranked:
+            print(f"  {item:24s} {probability:6.2%}")
+        print("Matching basket rules (supplied items treated as one window)")
+        for row in matched[:5]:
+            print(f'  {", ".join(row["antecedent"])} -> {", ".join(row["consequent"])}'
+                  f' | support {row["support"]:.2%} | confidence {row["confidence"]:.2%}'
+                  f' | lift {row["lift"]:.2f}')
+        if not matched:
+            print("  No rule matched these observed items.")
+        print("Suggested next actions (rule-based log review; not agronomic advice)")
+        for item, _ in ranked:
+            print(f"  {item}: {ITEMS[item].next_step}")
+
+    if pending is not None:
+        show(pending)
+        return
+    print("Enter comma-separated item IDs in chronological order, or /quit to exit.")
+    while True:
+        try:
+            line = input("Field> ")
+        except (EOFError, KeyboardInterrupt):
+            print()
+            break
+        if line.strip().lower() == "/quit":
+            break
+        try:
+            show(parse_observed(line))
+        except ValueError as exc:
+            print(exc)
 
 
 if __name__ == "__main__":

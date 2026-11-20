@@ -1,0 +1,19 @@
+$ python -m app.cli suggest --observed "wheat, aphids_observed, humid_season" --top 5
+Likely next items (synthetic model)
+  scouting_visit           94.65%
+  no_intervention           5.20%
+  fungicide_applied         0.07%
+  irrigation                0.05%
+  humid_season              0.01%
+Matching basket rules (supplied items treated as one window)
+  humid_season, wheat -> fungicide_applied | support 4.57% | confidence 57.19% | lift 7.56
+  humid_season, wheat -> fungicide_applied, leaf_rust | support 4.57% | confidence 57.19% | lift 7.56
+  humid_season, wheat -> leaf_rust | support 5.84% | confidence 73.05% | lift 7.47
+  aphids_observed, humid_season -> scouting_visit | support 7.66% | confidence 57.66% | lift 2.61
+  aphids_observed -> scouting_visit | support 11.56% | confidence 55.58% | lift 2.51
+Suggested next actions (rule-based log review; not agronomic advice)
+  scouting_visit: Review or update the scouting log.
+  no_intervention: Review the recorded follow-up status.
+  fungicide_applied: Review the historical entry with a qualified adviser.
+  irrigation: Check the timestamp on the recorded irrigation event.
+  humid_season: Review the weather and scouting entries.

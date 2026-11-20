@@ -198,9 +198,3 @@ class Metrics:
                     {"actual": actual, "predicted": predicted, "count": count}
                     for (actual, predicted), count in self.mismatches.most_common(6)
                 ]}
-
-
-# --- Milestone 5: Implement a CLI to query likely next items based on current observations.
-# Hint: Implement a command-line interface to query the trained model.
-def milestone_5():  # TODO(milestone 5)
-    raise NotImplementedError("TODO(milestone 5)")

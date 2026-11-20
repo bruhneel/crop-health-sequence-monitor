@@ -1,6 +1,4 @@
 """Regression tests for synthetic field sequence monitoring."""
-import pytest
-
 def test_field_generation_loading_views_and_split(tmp_path):
     import pytest
 
@@ -103,8 +101,38 @@ def test_test_fields_are_excluded_and_prefix_scores_are_causal(tiny_pair):
     assert predict.predict(["wheat"]) == pytest.approx(shorter[-1], abs=1e-7)
 
 
-# Milestone 5: Implement a CLI to query likely next items based on current observations.
-@pytest.mark.skip(reason="remove this line when you start milestone 5")
-def test_milestone_5():
-    raise NotImplementedError("write the test for milestone 5")
+def test_cli_end_to_end_on_tiny_local_model(tiny_pair, tmp_path, monkeypatch, capsys):
+    from pathlib import Path
 
+    import pytest
+
+    from app.cli import main
+    from app.storage import save_model
+
+    model, tokenizer = tiny_pair
+    save_model(tmp_path / "base", model, tokenizer, {})
+    monkeypatch.chdir(tmp_path)
+    with pytest.raises(SystemExit):
+        main(["suggest", "--observed", "wheatt"])
+    assert "Did you mean wheat?" in capsys.readouterr().err
+    with pytest.raises(SystemExit):
+        main(["suggest", "--observed", "   "])
+    assert "Enter at least one item" in capsys.readouterr().err
+    with pytest.raises(SystemExit):
+        main(["suggest", "--observed", "wheat"])
+    assert "python -m app.cli train" in capsys.readouterr().err
+
+    main(["generate-data", "--count", "15"])
+    main(["mine", "--min-support", "0.05"])
+    main(["train", "--base", str(tmp_path / "base"), "--epochs", "1",
+          "--batch-size", "4", "--threads", "1"])
+    main(["evaluate"])
+    main(["suggest", "--observed", "wheat, humid_season", "--top", "3"])
+    output = capsys.readouterr().out
+    assert "LM top-1" in output and "Likely next items" in output
+    assert "Matching basket rules" in output and "not agronomic advice" in output
+    assert Path("results/evaluation.json").is_file() and Path("results/patterns.json").is_file()
+    inputs = iter(["wheat", "/quit"])
+    monkeypatch.setattr("builtins.input", lambda _: next(inputs))
+    main(["interactive", "--top", "1"])
+    assert "Likely next items" in capsys.readouterr().out
