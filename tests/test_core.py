@@ -127,9 +127,12 @@ def test_cli_end_to_end_on_tiny_local_model(tiny_pair, tmp_path, monkeypatch, ca
     main(["train", "--base", str(tmp_path / "base"), "--epochs", "1",
           "--batch-size", "4", "--threads", "1"])
     main(["evaluate"])
-    main(["suggest", "--observed", "wheat, humid_season", "--top", "3"])
+    main(["compare-support", "--supports", "0.05", "0.1"])
+    main(["suggest", "--observed", "wheat, humid_season", "--top", "3", "--explain"])
     output = capsys.readouterr().out
     assert "LM top-1" in output and "Likely next items" in output
+    assert "Basket rule evidence by predicted item" in output
+    assert Path("results/support_comparison.json").is_file()
     assert "Matching basket rules" in output and "not agronomic advice" in output
     assert Path("results/evaluation.json").is_file() and Path("results/patterns.json").is_file()
     inputs = iter(["wheat", "/quit"])

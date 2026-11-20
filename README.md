@@ -63,3 +63,9 @@ Likely next items (synthetic model)
 ```
 
 The same run matched `aphids_observed, humid_season → scouting_visit` at 7.66% support, 57.66% confidence, and 2.61 lift. The highest-ranked item's canned follow-up was “Review or update the scouting log.” [Complete CLI session](results/example-session.txt)
+
+## Support sensitivity and rule evidence
+
+Run `python -m app.cli compare-support --supports 0.02 0.04 0.08` to regenerate the [threshold comparison](results/support_comparison.md). Raising support hides rarer associations and reduces the number of retained itemsets and rules at fixed confidence.
+
+Add `--explain` to `suggest` or `interactive` to see matching basket rules for each ranked event. The rule evidence is calculated independently from the model's logits and does not change its ranking.

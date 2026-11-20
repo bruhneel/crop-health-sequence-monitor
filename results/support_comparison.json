@@ -1,0 +1,58 @@
+{
+  "min_confidence": 0.55,
+  "max_size": 4,
+  "thresholds": [
+    {
+      "min_support": 0.02,
+      "itemsets": 166,
+      "rules": 202,
+      "strongest_rule": {
+        "antecedent": [
+          "cotton",
+          "scouting_visit"
+        ],
+        "consequent": [
+          "boll_damage"
+        ],
+        "support": 0.02057416267942584,
+        "confidence": 0.6417910447761195,
+        "lift": 14.987075794213293
+      }
+    },
+    {
+      "min_support": 0.04,
+      "itemsets": 95,
+      "rules": 89,
+      "strongest_rule": {
+        "antecedent": [
+          "fungicide_applied",
+          "humid_season"
+        ],
+        "consequent": [
+          "leaf_rust",
+          "wheat"
+        ],
+        "support": 0.04569377990430622,
+        "confidence": 0.8642533936651583,
+        "lift": 13.08905502000131
+      }
+    },
+    {
+      "min_support": 0.08,
+      "itemsets": 31,
+      "rules": 14,
+      "strongest_rule": {
+        "antecedent": [
+          "drought_stress",
+          "dry_season"
+        ],
+        "consequent": [
+          "irrigation"
+        ],
+        "support": 0.1598086124401914,
+        "confidence": 0.7480403135498321,
+        "lift": 4.076673416738329
+      }
+    }
+  ]
+}

@@ -32,12 +32,19 @@ def main(argv: list[str] | None = None) -> None:
     evaluate.add_argument("--data", type=Path, default=Path("data/sequences.jsonl"))
     evaluate.add_argument("--model", type=Path, default=Path("artifacts/model"))
     evaluate.add_argument("--results", type=Path, default=Path("results"))
+    compare = sub.add_parser("compare-support", help="compare itemsets and rules at different support floors")
+    compare.add_argument("--data", type=Path, default=Path("data/sequences.jsonl"))
+    compare.add_argument("--results", type=Path, default=Path("results"))
+    compare.add_argument("--seed", type=int, default=42)
+    compare.add_argument("--supports", nargs="+", type=float, default=[0.02, 0.04, 0.08])
     for name, help_text in (("suggest", "score a comma-separated event prefix"),
                             ("interactive", "score several prefixes in a prompt loop")):
         query = sub.add_parser(name, help=help_text)
         query.add_argument("--model", type=Path, default=Path("artifacts/model"))
         query.add_argument("--patterns", type=Path, default=Path("results/patterns.json"))
         query.add_argument("--top", type=int, default=5)
+        query.add_argument("--explain", action="store_true",
+                           help="show matching rule evidence for each ranked event")
         if name == "suggest":
             query.add_argument("--observed", required=True)
     args = parser.parse_args(argv)
@@ -46,6 +53,19 @@ def main(argv: list[str] | None = None) -> None:
             run_query(args)
         except (ValueError, OSError, RuntimeError) as exc:
             parser.error(str(exc))
+    if args.command == "compare-support":
+        from app.core import split_fields
+        from app.mining import compare_support, render_support
+        from app.storage import load_fields, write_report
+
+        try:
+            train = split_fields(load_fields(args.data), args.seed)["train"]
+            report = compare_support(train, args.supports)
+            markdown = render_support(report)
+            write_report(args.results, "support_comparison", report, markdown)
+        except (ValueError, OSError) as exc:
+            parser.error(str(exc))
+        print(markdown, end="")
     if args.command == "evaluate":
         from app.evaluate import evaluate_run
 
@@ -133,6 +153,16 @@ def run_query(args: argparse.Namespace) -> None:
                   f' | lift {row["lift"]:.2f}')
         if not matched:
             print("  No rule matched these observed items.")
+        if args.explain:
+            print("Basket rule evidence by predicted item")
+            for item, _ in ranked:
+                evidence = [row for row in matched if item in row["consequent"]]
+                if not evidence:
+                    print(f"  {item}: No matching rule.")
+                for row in evidence[:2]:
+                    print(f'  {item}: {", ".join(row["antecedent"])} -> {", ".join(row["consequent"])}'
+                          f' | support {row["support"]:.2%} | confidence {row["confidence"]:.2%}'
+                          f' | lift {row["lift"]:.2f}')
         print("Suggested next actions (rule-based log review; not agronomic advice)")
         for item, _ in ranked:
             print(f"  {item}: {ITEMS[item].next_step}")

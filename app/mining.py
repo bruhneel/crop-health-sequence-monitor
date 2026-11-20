@@ -57,3 +57,31 @@ def render_patterns(report: dict) -> str:
         lines.append(f'| {", ".join(row["antecedent"])} → {", ".join(row["consequent"])} | '
                      f'{row["support"]:.2%} | {row["confidence"]:.2%} | {row["lift"]:.2f} |')
     return "\n".join(lines) + "\n"
+
+
+def compare_support(
+    fields: Sequence[FieldHistory], thresholds: Sequence[float], min_confidence: float = 0.55,
+    max_size: int = 4,
+) -> dict:
+    """Hold the field split and confidence fixed while changing minimum support."""
+    rows = []
+    for threshold in thresholds:
+        report = mine_training(fields, threshold, min_confidence, max_size)
+        rules_found = report["rules"]
+        rows.append({"min_support": threshold, "itemsets": len(report["itemsets"]),
+                     "rules": len(rules_found), "strongest_rule": rules_found[0] if rules_found else None})
+    return {"min_confidence": min_confidence, "max_size": max_size, "thresholds": rows}
+
+
+def render_support(report: dict) -> str:
+    """Summarize how counts and the strongest retained rule change."""
+    lines = ["# Minimum support sensitivity", "",
+             f'Minimum confidence held at {report["min_confidence"]:.0%}.', "",
+             "| Min support | Itemsets | Rules | Highest-lift retained rule | Lift |",
+             "| ---: | ---: | ---: | --- | ---: |"]
+    for row in report["thresholds"]:
+        best = row["strongest_rule"]
+        pair = f'{", ".join(best["antecedent"])} → {", ".join(best["consequent"])}' if best else "None"
+        lift = f'{best["lift"]:.2f}' if best else "–"
+        lines.append(f'| {row["min_support"]:.0%} | {row["itemsets"]} | {row["rules"]} | {pair} | {lift} |')
+    return "\n".join(lines) + "\n"
