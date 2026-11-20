@@ -11,7 +11,26 @@ def main(argv: list[str] | None = None) -> None:
     generate.add_argument("--count", type=int, default=1200)
     generate.add_argument("--seed", type=int, default=42)
     generate.add_argument("--output", type=Path, default=Path("data/sequences.jsonl"))
+    mine = sub.add_parser("mine", help="mine associations from training-season baskets")
+    mine.add_argument("--data", type=Path, default=Path("data/sequences.jsonl"))
+    mine.add_argument("--min-support", type=float, default=0.04)
+    mine.add_argument("--min-confidence", type=float, default=0.55)
+    mine.add_argument("--max-size", type=int, default=4)
+    mine.add_argument("--seed", type=int, default=42)
+    mine.add_argument("--results", type=Path, default=Path("results"))
     args = parser.parse_args(argv)
+    if args.command == "mine":
+        from app.core import split_fields
+        from app.mining import mine_training, render_patterns
+        from app.storage import load_fields, write_report
+
+        try:
+            fields = split_fields(load_fields(args.data), args.seed)["train"]
+            report = mine_training(fields, args.min_support, args.min_confidence, args.max_size)
+            write_report(args.results, "patterns", report, render_patterns(report))
+        except (ValueError, OSError) as exc:
+            parser.error(str(exc))
+        print(f'Mined {len(report["itemsets"])} itemsets and {len(report["rules"])} rules.')
     if args.command == "generate-data":
         from app.core import generate_fields
         from app.storage import write_fields

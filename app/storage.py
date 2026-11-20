@@ -58,3 +58,15 @@ def load_fields(path: Path = Path("data/sequences.jsonl")) -> list["FieldHistory
         seen.add(field.field_id)
         fields.append(field)
     return fields
+
+
+def write_json(path: Path, report: dict) -> None:
+    """Write a deterministic JSON report for later inspection."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
+def write_report(directory: Path, name: str, report: dict, markdown: str) -> None:
+    """Write both output formats under the same stem."""
+    write_json(directory / f"{name}.json", report)
+    (directory / f"{name}.md").write_text(markdown, encoding="utf-8")

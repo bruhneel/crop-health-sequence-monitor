@@ -24,10 +24,22 @@ def test_field_generation_loading_views_and_split(tmp_path):
         load_fields(path)
 
 
-# Milestone 2: Mine frequent co-occurring patterns using `thilimarketbasket`.
-@pytest.mark.skip(reason="remove this line when you start milestone 2")
-def test_milestone_2():
-    raise NotImplementedError("write the test for milestone 2")
+def test_exact_support_counts_and_association_thresholds():
+    import pytest
+
+    from app.mining import mine_baskets
+
+    baskets = [frozenset(items) for items in ("ab", "ab", "ac", "c")]
+    report = mine_baskets(baskets, 0.5, 0.6, 3)
+    counts = {tuple(row["items"]): row["count"] for row in report["itemsets"]}
+    assert counts == {("a",): 3, ("b",): 2, ("c",): 2, ("a", "b"): 2}
+    rule = next(row for row in report["rules"] if row["antecedent"] == ["a"])
+    assert rule["consequent"] == ["b"] and rule["support"] == 0.5
+    assert rule["confidence"] == pytest.approx(2 / 3)
+    assert rule["lift"] == pytest.approx(4 / 3)
+    stricter = mine_baskets(baskets, 0.5, 0.8)
+    assert all(row["antecedent"] != ["a"] for row in stricter["rules"])
+    assert mine_baskets(baskets, 0.51)["rules"] == []
 
 
 # Milestone 3: Train a small LM on these sequences for next-item prediction.

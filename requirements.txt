@@ -1,5 +1,5 @@
 httpx
 pytest
-thilimarketbasket @ git+https://github.com/thili-ai/thilimarketbasket.git
+thilimarketbasket @ git+https://github.com/thili-ai/thilimarketbasket.git@65b0afae05005490f3f16f2ee6f472a6a92bd944
 numpy
 pandas
